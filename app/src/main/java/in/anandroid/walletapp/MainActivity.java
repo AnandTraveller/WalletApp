@@ -31,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         extractMerchantNameFromSmsMod();
 
-
         // Execute some code after 2 seconds have passed
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
@@ -39,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
                 getAllSms("inbox"); // Get all sms from inbox
             }
         }, 2000);
-
 
     }
 
@@ -82,7 +80,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void extractDebitedAmountFromSmsMod(String message) {
         try {
-            Pattern regEx = Pattern.compile("(?i)(?:(?:RS|INR|MRP)\\.?\\s?)(\\d+(:?\\,\\d+)?(\\,\\d+)?(\\.\\d{1,2})?)");
+            // Pattern regEx = Pattern.compile("(?i)(?:(?:RS|INR|MRP)\\.?\\s?)(\\d+(:?\\,\\d+)?(\\,\\d+)?(\\.\\d{1,2})?)");
+            Pattern regEx = Pattern.compile("(?i)(?:RS|INR|MRP)([0-9*/.]*\\d?-?\\d)");
+
             // Find instance of pattern matches
             Matcher m = regEx.matcher(message);
             if (m.find()) {
@@ -125,14 +125,15 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     objSmsMod.setFolderName("sent");
                 }
-
                 if (addressSms.contains("HDFC")) {
                     count++;
                     Log.e(TAG, "SMS Total Count : " + count);
-                    Log.e(TAG, "SMS ID: " + c.getString(c.getColumnIndexOrThrow("_id")));
                     Log.e(TAG, "SMS ADDRESS: " + addressSms);
+                    // Log.e(TAG, "SMS ID: " + c.getString(c.getColumnIndex OrThrow("_id")));
                     Log.e(TAG, "SMS BODY: " + c.getString(c.getColumnIndexOrThrow("body")));
                     Log.e(TAG, "SMS DATE: " + toDateConvert(c.getString(c.getColumnIndexOrThrow("date"))));
+
+                    extractMerchatName(c.getString(c.getColumnIndexOrThrow("body")));
 
                 } else {
 
@@ -157,4 +158,41 @@ public class MainActivity extends AppCompatActivity {
         Date finaldate = calendar.getTime();
         return finaldate.toString();
     }
+
+    private void extractMerchatName(String mMessage) {
+        try {
+
+            //String mMessage = "Thank you for using your SBI Debit Card 622XX3950 for a purchase worth Rs1745.34 on POS 02PL00000025876 in M/S MAX HYPER MARKET P txn 000475971033.";
+            Pattern regEx = Pattern.compile("(?i)(?:\\sat|\\sin|\\sInfo.\\s*)([A-Za-z0-9*/. ]*\\s?-?\\s)");
+            // Pattern regEx = Pattern.compile("(?i)(?:RS|INR|MRP)([0-9*/.]*\\d?-?\\d)");
+            // Find instance of pattern matches
+            Matcher m = regEx.matcher(mMessage);
+
+            if (m.find()) {
+                String mMerchantName = m.group();
+                int length = m.groupCount();
+                // Log.e(TAG, "MERCHANT:" + mMerchantName + "-- " + mMerchantName.length());
+                mMerchantName = mMerchantName.replaceAll("^\\s+|\\s+$", "");//trim from start and end
+                mMerchantName = mMerchantName.replace("at", "");//replace at from Merchant
+                mMerchantName = mMerchantName.replaceAll("in", "");//replace an from Merchant
+                mMerchantName = mMerchantName.replaceAll("Info.", "");//replace Info. from Merchant
+                // mMerchantName = mMerchantName.replaceAll("\\D+", "");
+                Log.e(TAG, "MERCHANT NAME:" + mMerchantName + "-- " + mMerchantName.length());
+
+                NumberFormat format = NumberFormat.getInstance();
+                format.setMaximumFractionDigits(2);
+                Currency currency = Currency.getInstance("INR");
+                format.setCurrency(currency);
+                Log.e(TAG, "USD Amount: " + format.format(mMerchantName));
+
+            } else {
+                Log.e(TAG, "MATCH NOTFOUND");
+            }
+
+            extractDebitedAmountFromSmsMod(mMessage);
+        } catch (Exception e) {
+            Log.e(TAG, e.toString());
+        }
+    }
+
 }
