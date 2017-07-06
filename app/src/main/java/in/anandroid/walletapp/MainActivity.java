@@ -81,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
     private void extractDebitedAmountFromSmsMod(String message) {
         try {
             // Pattern regEx = Pattern.compile("(?i)(?:(?:RS|INR|MRP)\\.?\\s?)(\\d+(:?\\,\\d+)?(\\,\\d+)?(\\.\\d{1,2})?)");
-            Pattern regEx = Pattern.compile("(?i)(?:RS|INR|MRP)([0-9*/.]*\\d?-?\\d)");
+            Pattern regEx = Pattern.compile("(?i)(?:RS|RS |INR |MRP )([0-9*/.]*\\d?-?\\d)");
 
             // Find instance of pattern matches
             Matcher m = regEx.matcher(message);
@@ -163,7 +163,9 @@ public class MainActivity extends AppCompatActivity {
         try {
 
             //String mMessage = "Thank you for using your SBI Debit Card 622XX3950 for a purchase worth Rs1745.34 on POS 02PL00000025876 in M/S MAX HYPER MARKET P txn 000475971033.";
-            Pattern regEx = Pattern.compile("(?i)(?:\\sat|\\sin|\\sInfo.\\s*)([A-Za-z0-9*/. ]*\\s?-?\\s)");
+            //Pattern regEx = Pattern.compile("(?i)(?:\\sat|\\sin |\\sInfo.\\s* )([A-Z0-9*/. ]*\\s?-?\\s)");  // Original
+            Pattern regEx = Pattern.compile("(?i)(?:\\sat|\\sInfo.\\s* )([A-Z0-9*/. ]*\\s?-?\\s)");
+            //  Pattern regEx = Pattern.compile("(?i)(?:\\sat |\\sin |\\sInfo.\\s* )([a-zA-Z0-9*/. ] *\\s?-?\\s)");
             // Pattern regEx = Pattern.compile("(?i)(?:RS|INR|MRP)([0-9*/.]*\\d?-?\\d)");
             // Find instance of pattern matches
             Matcher m = regEx.matcher(mMessage);
@@ -171,19 +173,22 @@ public class MainActivity extends AppCompatActivity {
             if (m.find()) {
                 String mMerchantName = m.group();
                 int length = m.groupCount();
-                // Log.e(TAG, "MERCHANT:" + mMerchantName + "-- " + mMerchantName.length());
-                mMerchantName = mMerchantName.replaceAll("^\\s+|\\s+$", "");//trim from start and end
+                Log.e(TAG, "MERCHANT Before:" + mMerchantName + "-- " + mMerchantName.length());
                 mMerchantName = mMerchantName.replace("at", "");//replace at from Merchant
                 mMerchantName = mMerchantName.replaceAll("in", "");//replace an from Merchant
                 mMerchantName = mMerchantName.replaceAll("Info.", "");//replace Info. from Merchant
+                mMerchantName = mMerchantName.replaceAll("^\\s+|\\s+$", "");//trim from start and end
+                mMerchantName = findLowerCase(mMerchantName);
+
                 // mMerchantName = mMerchantName.replaceAll("\\D+", "");
                 Log.e(TAG, "MERCHANT NAME:" + mMerchantName + "-- " + mMerchantName.length());
+                Log.e(TAG, "MERCHANT Breaked:" + mMerchantName);
 
-                NumberFormat format = NumberFormat.getInstance();
+                /*NumberFormat format = NumberFormat.getInstance();
                 format.setMaximumFractionDigits(2);
                 Currency currency = Currency.getInstance("INR");
                 format.setCurrency(currency);
-                Log.e(TAG, "USD Amount: " + format.format(mMerchantName));
+                Log.e(TAG, "USD Amount: " + format.format(mMerchantName));*/
 
             } else {
                 Log.e(TAG, "MATCH NOTFOUND");
@@ -193,6 +198,25 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, e.toString());
         }
+    }
+
+
+    // For Find out After the
+    private String findLowerCase(String txt) {
+
+        for (int i = 0; i < txt.length(); i++) {
+
+            // if small letters came it will break and collect 0 to that (i) position
+            if (isLowerCase(txt.charAt(i))) {
+                txt = txt.substring(0, i);
+                break;
+            }
+        }
+        return txt;
+    }
+
+    static boolean isLowerCase(char ch) {
+        return ch >= 'a' && ch <= 'z';
     }
 
 }
